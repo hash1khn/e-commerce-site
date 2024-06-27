@@ -2,9 +2,22 @@ const Cart = require('../model/cartModel');
 const Product = require('../model/productModel');
 const User= require('../model/userModel');
 
+async function updateCartTotals(cart) {
+  cart.totalPrice = 0;
+  for (let product of cart.products) {
+    const productDetails = await Product.findById(product.productId);
+    if (productDetails) {
+      product.totalOfEachProduct = productDetails.price * product.quantity;
+      cart.totalPrice += product.totalOfEachProduct;
+    }
+  }
+}
+
 const addProductToCart = async (req, res) => {
   const { userId } = req.params;
-  const { productId, quantity,totalOfeachProduct } = req.body;
+  const { productId, quantity} = req.body;
+  console.log("🚀 ~ addProductToCart ~ req.body:", req.body)
+
 
   try {
     let user= await User.findById(userId).populate('cart');
@@ -13,12 +26,13 @@ const addProductToCart = async (req, res) => {
     }
     let cart = user.cart;
     if(!cart){
-      cart = new Cart({userId, products: [], totalPrice:0,totalOfeachProduct:0});
+      cart = new Cart({userId, products: [], totalPrice:0});
       user.cart=cart._id;
       await user.save();
     }
-    const product = await Product.findById(productId);
-
+    else{
+      cart=await Cart.findById(cart._id);
+    }
     const productIndex = cart.products.findIndex(p => p.productId.toString() === productId);
 
     if (productIndex > -1) {
@@ -26,8 +40,7 @@ const addProductToCart = async (req, res) => {
     } else {
       cart.products.push({ productId, quantity });
     }
-
-    cart.totalPrice += product.price * quantity;
+    await updateCartTotals(cart);
 
     await cart.save();
     res.status(200).json(cart);
@@ -50,9 +63,8 @@ const removeProductFromCart = async (req, res) => {
     const productIndex = cart.products.findIndex(p => p.productId.toString() === productId);
 
     if (productIndex > -1) {
-      const product = await Product.findById(productId);
-      cart.totalPrice -= product.price * cart.products[productIndex].quantity;
       cart.products.splice(productIndex, 1);
+      await updateCartTotals(cart);
       await cart.save();
     }
 
@@ -92,14 +104,12 @@ const updateProductQuantity = async (req, res) => {
       return res.status(404).json({ message: 'Cart not found' });
     }
     let cart = user.cart;
-    const product = await Product.findById(productId);
 
     const productIndex = cart.products.findIndex(p => p.productId.toString() === productId);
 
     if (productIndex > -1) {
-      cart.totalPrice -= cart.products[productIndex].quantity * product.price;
       cart.products[productIndex].quantity = quantity;
-      cart.totalPrice += quantity * product.price;
+      await updateCartTotals(cart);
       await cart.save();
     }
 

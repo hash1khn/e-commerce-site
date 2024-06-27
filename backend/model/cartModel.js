@@ -19,9 +19,11 @@ const cartSchema = new mongoose.Schema({
         min: 1,
         default: 1,
       },
-      totalOfeachProduct:{
+      totalOfEachProduct:{
         type:Number,
         required: true,
+        default:0,
+
       }
     },
   ],
