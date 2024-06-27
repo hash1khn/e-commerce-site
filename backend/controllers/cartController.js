@@ -16,7 +16,6 @@ async function updateCartTotals(cart) {
 const addProductToCart = async (req, res) => {
   const { userId } = req.params;
   const { productId, quantity} = req.body;
-  console.log("🚀 ~ addProductToCart ~ req.body:", req.body)
 
 
   try {
