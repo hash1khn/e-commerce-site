@@ -1,19 +1,22 @@
 const Product=require('../model/productModel')
+const Category = require('../model/categoryModel');
 
-//create product
-const createProduct =async (req, res) => {
-    try{
-        const{name,description,quantity,price,photo}=req.body;
-        const product=new Product({name,description,quantity,price,photo})
-        await product.save()
-        res.status(200).json(product)
-
+// Create product
+const createProduct = async (req, res) => {
+    try {
+        const { name, description, quantity, price, photo, categoryId } = req.body;
+        const category = await Category.findById(categoryId);
+        if (!category) {
+            return res.status(400).json({ message: 'Invalid category ID' });
+        }
+        const product = new Product({ name, description, quantity, price, photo, category: categoryId });
+        await product.save();
+        res.status(200).json(product);
+    } catch (err) {
+        res.status(500).json({ message: "incorrect input" });
     }
-    catch(err){
-        res.status(500).json({message: "incorrect input"});
+};
 
-    }
-}
 // Get a product by ID
 const getProductById = async (req, res) => {
     try {
