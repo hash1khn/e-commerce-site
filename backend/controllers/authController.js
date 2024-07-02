@@ -2,6 +2,7 @@ const User = require('../model/userModel');
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const nodemailer = require('nodemailer');
+const jwt = require('jsonwebtoken');
 
 // Register
 const register = async (req, res) => {
@@ -84,15 +85,16 @@ const login = async (req, res) => {
     if (!user || !(await bcrypt.compare(password, user.password))) {
       return res.status(400).json({ message: 'Incorrect email/password' });
     }
-    else if(!user.isVerified){
+    else if (!user.isVerified) {
       return res.status(400).json({ message: 'Email is not verified' });
     }
-    res.status(200).json({ message: 'Login successful' });
+
+    const token = jwt.sign({ _id: user._id }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' });
+    res.status(200).json({ message: 'Login successful', token });
   } catch (err) {
     res.status(400).json({ error: 'Error during login' });
   }
 };
-
 // Forgot Password
 const forgotPassword = async (req, res) => {
   const { email } = req.body;
